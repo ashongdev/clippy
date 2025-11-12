@@ -21,6 +21,8 @@ interface ClipHistoryItem {
 }
 
 const App = () => {
+	const suiClient = new SuiClient({ url: getFullnodeUrl("testnet") });
+
 	const account = useCurrentAccount();
 	const [text, setText] = useState<string>("");
 	const [clipContent, setClipContent] = useState<any>("");
@@ -34,6 +36,7 @@ const App = () => {
 	const [showHistory, setShowHistory] = useState<boolean>(false);
 	const [charCount, setCharCount] = useState<number>(0);
 	const [inputMode, setInputMode] = useState<"create" | "fetch">("create");
+	const [objectId, setObjectId] = useState<string | undefined>("");
 
 	const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 	const maxChars = 1000;
@@ -94,8 +97,17 @@ const App = () => {
 			signAndExecute(
 				{ transaction: txb },
 				{
-					onSuccess: (result) => {
-						console.log(result);
+					onSuccess: async (result) => {
+						const tx = await suiClient.getTransactionBlock({
+							digest: result.digest,
+							options: { showEffects: true },
+						});
+						if (tx.effects?.created) {
+							setObjectId(
+								tx.effects?.created[0].reference.objectId
+							);
+						}
+
 						showNotification(
 							"success",
 							"Clip stored on-chain successfully!",
@@ -142,7 +154,6 @@ const App = () => {
 		setIsLoading(true);
 
 		try {
-			const suiClient = new SuiClient({ url: getFullnodeUrl("testnet") });
 			const clip = await suiClient.getObject({
 				id: text,
 				options: { showContent: true },
@@ -350,14 +361,37 @@ const App = () => {
 
 						<div className="input-section">
 							{inputMode === "create" ? (
-								<Create
-									account={account}
-									charCount={charCount}
-									isLoading={isLoading}
-									maxChars={maxChars}
-									setText={setText}
-									text={text}
-								/>
+								<>
+									<Create
+										account={account}
+										charCount={charCount}
+										isLoading={isLoading}
+										maxChars={maxChars}
+										setText={setText}
+										text={text}
+									/>
+									{objectId && (
+										<div
+											className="gas-estimate"
+											style={{
+												display: "flex",
+												flexDirection: "column",
+												justifyContent: "flex-start",
+												alignItems: "flex-start",
+											}}
+										>
+											<span className="gas-label">
+												Object Created(ID):
+											</span>
+											<span
+												className="gas-value"
+												style={{ fontSize: "1.2rem" }}
+											>
+												0x7e3d702e05652acabbeabb48bbbf0ab98e4cb00eff1499d86dfb4b3c4b0a154e
+											</span>
+										</div>
+									)}
+								</>
 							) : (
 								<FetchOrDelete
 									account={account}
