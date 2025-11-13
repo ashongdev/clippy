@@ -387,7 +387,7 @@ const App = () => {
 												className="gas-value"
 												style={{ fontSize: "1.2rem" }}
 											>
-												0x7e3d702e05652acabbeabb48bbbf0ab98e4cb00eff1499d86dfb4b3c4b0a154e
+												{objectId}
 											</span>
 										</div>
 									)}
